@@ -1,3 +1,7 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <limits.h>
+
 enum myBool {
     FALSE = 0, TRUE = 1
 };
@@ -43,7 +47,6 @@ typedef struct PowerSubsystemDataStruct PowerSubsystemData;
 struct ThrusterSubsystemDataStruct {
     unsigned int *thrusterControl;
     unsigned short *fuelLevel;
-
 };
 typedef struct ThrusterSubsystemDataStruct ThrusterSubsystemData;
 
@@ -89,6 +92,10 @@ void consoleDisplayTask(void *consoleDisplayData);
 void warningAlarmTask(void *warningAlarmData);
 
 unsigned long systemTime(); //TODO implement this function
+
+int randomInteger(int low, int high);
+
+int randomSeed = 1;
 
 
 void run() {
@@ -177,13 +184,13 @@ void powerSubsystemTask(void *powerSubsystemData) {
 
     //powerConsumption
     static Bool consumptionIncreasing = TRUE;
-    if(consumptionIncreasing) {
+    if (consumptionIncreasing) {
         if (executionCount % 2 == 0) {
             *(data->powerConsumption) += 2;
         } else {
             *(data->powerConsumption) -= 1;
         }
-        if(*(data->powerConsumption) > 10) {
+        if (*(data->powerConsumption) > 10) {
             consumptionIncreasing = FALSE;
         }
     } else {
@@ -192,7 +199,7 @@ void powerSubsystemTask(void *powerSubsystemData) {
         } else {
             *(data->powerConsumption) += 1;
         }
-        if(*(data->powerConsumption) < 5) {
+        if (*(data->powerConsumption) < 5) {
             consumptionIncreasing = TRUE;
         }
     }
@@ -203,25 +210,25 @@ void powerSubsystemTask(void *powerSubsystemData) {
             *data->solarPanelState = FALSE;
         } else if (*data->batteryLevel < 50) {
             //Increment the variable by 2 every even numbered time
-            if(executionCount % 2 == 0) {
+            if (executionCount % 2 == 0) {
                 (*data->powerGeneration) += 2;
             } else { //Increment the variable by 1 every odd numbered time
                 (*data->powerGeneration) += 1;
             }
         } else {
             //Increment the variable by 2 every even numbered time
-            if(executionCount % 2 == 0) {
+            if (executionCount % 2 == 0) {
                 (*data->powerGeneration) += 2;
             }
         }
     } else {
-        if(*data->batteryLevel <= 10) {
+        if (*data->batteryLevel <= 10) {
             *data->solarPanelState = TRUE;
         }
     }
 
     //batteryLevel
-    if(*data->solarPanelState) { //If deployed
+    if (*data->solarPanelState) { //If deployed
         *data->batteryLevel = *data->batteryLevel - (*(data->powerConsumption)) + (*(data->powerConsumption));
     } else { //If not deplyed
         *data->batteryLevel = *data->batteryLevel - 3 * (*(data->powerConsumption));
@@ -231,22 +238,93 @@ void powerSubsystemTask(void *powerSubsystemData) {
 
 void thrusterSubsystemTask(void *thrusterSubsystemData) {
     ThrusterSubsystemData *data = (ThrusterSubsystemData *) thrusterSubsystemData;
+    unsigned short left = 0, right = 0, up = 0, down = 0;
 
+    unsigned int signal = *(data->thrusterControl);
+
+    unsigned int direction = signal & (0xF); // Get the last 4 bits
+    unsigned int magnitude = (signal & (0xF0)) >> 4; // Get the 5-7th bit and shift if back down
+    unsigned int duration = (signal & (0xFF00)) >> 8;
+
+    //TODO Change the fuel level based on the extracted values
+
+}
+
+unsigned int getRandomThrustSignal() {
+    unsigned int signal = 1;
+    unsigned short direction = (unsigned short) randomInteger(0, 4);
+    if(direction == 4) //No thrust
+        return 0;
+    signal = signal << direction;
+    unsigned int magnitude = randomInteger(0, 15);
+    unsigned int duration = randomInteger(0, 255);
+
+    signal = signal | (magnitude << 4);
+    signal = signal | (duration << 8);
+    return signal;
 }
 
 void satelliteComsTask(void *satelliteComsData) {
     SatelliteComsData *data = (SatelliteComsData *) satelliteComsData;
 
+    //TODO: In future labs, send the following data:
+    /*
+        * Fuel Low
+        * Battery Low
+        * Solar Panel State
+        * Battery Level
+        * Fuel Level
+        * Power Consumption
+        * Power Generation
+     */
+
+    *(data->thrusterControl) = getRandomThrustSignal();
 }
 
 void consoleDisplayTask(void *consoleDisplayData) {
     ConsoleDisplayData *data = (ConsoleDisplayData *) consoleDisplayData;
+    Bool inStatusMode = TRUE; //TODO get this from some extranal input
+    if(inStatusMode) {
+        //Print
+        //Solar Panel State
+        //Battery Level
+        //Fuel Level
+        //Power Consumption
+    } else {
 
+    }
 }
 
 void warningAlarmTask(void *warningAlarmData) {
     WarningAlarmData *data = (WarningAlarmData *) warningAlarmData;
 
+}
+
+
+int randomInteger(int low, int high) {
+    double randNum = 0.0;
+    int multiplier = 2743;
+    int addOn = 5923;
+    double max = INT_MAX + 1.0;
+
+    int retVal = 0;
+
+    if (low > high)
+        retVal = randomInteger(high, low);
+    else {
+        randomSeed = randomSeed * multiplier + addOn;
+        randNum = randomSeed;
+
+        if (randNum < 0) {
+            randNum = randNum + max;
+        }
+
+        randNum = randNum / max;
+
+        retVal = ((int) ((high - low + 1) * randNum)) + low;
+    }
+
+    return retVal;
 }
 
 
