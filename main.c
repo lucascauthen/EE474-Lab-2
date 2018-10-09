@@ -91,9 +91,13 @@ void consoleDisplayTask(void *consoleDisplayData);
 
 void warningAlarmTask(void *warningAlarmData);
 
-unsigned long systemTime(); //TODO implement this function
+unsigned long systemTime; //TODO Implement this behavior
 
 int randomInteger(int low, int high);
+
+void scheduleTask(TCB *tasks[6]);
+
+void delay(unsigned long delayMs);
 
 int randomSeed = 1;
 
@@ -174,6 +178,28 @@ void run() {
     warningAlarm.task = &warningAlarmTask;
 
     queue[4] = &warningAlarm;
+
+    scheduleTask(queue);
+}
+
+void delay(unsigned long delayMs) {
+    systemTime += delayMs;
+    //TODO add sleep function
+}
+
+void scheduleTask(TCB *tasks[6]) {
+    unsigned int currentTaskIndex = 0;
+    while (1) {
+        //Major cycle
+        while (currentTaskIndex < 6) {
+            TCB *task = tasks[currentTaskIndex];
+            task->task(task->taskDataPtr);
+            delay(50);
+            currentTaskIndex++;
+        }
+        //Minor cycle
+        //TODO
+    }
 }
 
 void powerSubsystemTask(void *powerSubsystemData) {
@@ -253,7 +279,7 @@ void thrusterSubsystemTask(void *thrusterSubsystemData) {
 unsigned int getRandomThrustSignal() {
     unsigned int signal = 1;
     unsigned short direction = (unsigned short) randomInteger(0, 4);
-    if(direction == 4) //No thrust
+    if (direction == 4) //No thrust
         return 0;
     signal = signal << direction;
     unsigned int magnitude = randomInteger(0, 15);
@@ -284,7 +310,7 @@ void satelliteComsTask(void *satelliteComsData) {
 void consoleDisplayTask(void *consoleDisplayData) {
     ConsoleDisplayData *data = (ConsoleDisplayData *) consoleDisplayData;
     Bool inStatusMode = TRUE; //TODO get this from some extranal input
-    if(inStatusMode) {
+    if (inStatusMode) {
         //Print
         //Solar Panel State
         //Battery Level
