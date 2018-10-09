@@ -1,3 +1,3 @@
-/Users/admin/Google Drive/School/EE/EE 474/Lab2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/admin/Google Drive/School/EE/EE 474/Lab2/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/admin/Google Drive/School/EE/EE 474/Lab2/cmake-build-debug/CMakeFiles/Lab2.dir
+/Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2/cmake-build-debug/CMakeFiles/Lab2.dir

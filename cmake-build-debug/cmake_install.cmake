@@ -1,4 +1,4 @@
-# Install script for directory: /Users/admin/Google Drive/School/EE/EE 474/Lab2
+# Install script for directory: /Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/admin/Google Drive/School/EE/EE 474/Lab2/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -171,29 +171,46 @@ void run() {
 
 void powerSubsystemTask(void *powerSubsystemData) {
     PowerSubsystemData *data = (PowerSubsystemData *) powerSubsystemData;
-    unsigned long time = systemTime();
+    //Count of the number times this function is called.
+    // It is okay if this number wraps to 0 because we just care about if the function call is odd or even
+    static unsigned int executionCount = 0;
 
     //powerConsumption
-    //TODO Fix powerConsumption
-    if (time % 2 == 0) {
-        *(data->powerConsumption) += 2;
+    static Bool consumptionIncreasing = TRUE;
+    if(consumptionIncreasing) {
+        if (executionCount % 2 == 0) {
+            *(data->powerConsumption) += 2;
+        } else {
+            *(data->powerConsumption) -= 1;
+        }
+        if(*(data->powerConsumption) > 10) {
+            consumptionIncreasing = FALSE;
+        }
     } else {
-
+        if (executionCount % 2 == 0) {
+            *(data->powerConsumption) -= 2;
+        } else {
+            *(data->powerConsumption) += 1;
+        }
+        if(*(data->powerConsumption) < 5) {
+            consumptionIncreasing = TRUE;
+        }
     }
+
     //powerGeneration
     if (data->solarPanelState) {
         if (*data->batteryLevel > 95) {
             *data->solarPanelState = FALSE;
         } else if (*data->batteryLevel < 50) {
             //Increment the variable by 2 every even numbered time
-            if(time % 2 == 0) {
+            if(executionCount % 2 == 0) {
                 (*data->powerGeneration) += 2;
             } else { //Increment the variable by 1 every odd numbered time
                 (*data->powerGeneration) += 1;
             }
         } else {
             //Increment the variable by 2 every even numbered time
-            if(time % 2 == 0) {
+            if(executionCount % 2 == 0) {
                 (*data->powerGeneration) += 2;
             }
         }
@@ -209,6 +226,7 @@ void powerSubsystemTask(void *powerSubsystemData) {
     } else { //If not deplyed
         *data->batteryLevel = *data->batteryLevel - 3 * (*(data->powerConsumption));
     }
+    executionCount++;
 }
 
 void thrusterSubsystemTask(void *thrusterSubsystemData) {

@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/Users/admin/Google Drive/School/EE/EE 474/Lab2/main.c" "/Users/admin/Google Drive/School/EE/EE 474/Lab2/cmake-build-debug/CMakeFiles/Lab2.dir/main.c.o"
+  "/Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2/main.c" "/Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2/cmake-build-debug/CMakeFiles/Lab2.dir/main.c.o"
   )
 set(CMAKE_C_COMPILER_ID "AppleClang")
 

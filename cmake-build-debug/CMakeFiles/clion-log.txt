@@ -1,4 +1,4 @@
-/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" "/Users/admin/Google Drive/School/EE/EE 474/Lab2"
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" "/Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2"
 -- The C compiler identification is AppleClang 9.1.0.9020039
 -- Check for working C compiler: /Library/Developer/CommandLineTools/usr/bin/cc
 -- Check for working C compiler: /Library/Developer/CommandLineTools/usr/bin/cc -- works
@@ -8,4 +8,4 @@
 -- Detecting C compile features - done
 -- Configuring done
 -- Generating done
--- Build files have been written to: /Users/admin/Google Drive/School/EE/EE 474/Lab2/cmake-build-debug
+-- Build files have been written to: /Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2/cmake-build-debug
