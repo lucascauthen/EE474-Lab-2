@@ -3,11 +3,22 @@
 #include <limits.h>
 #include <time.h>
 
+long delay = 1000;
+
 enum myBool {
     FALSE = 0, TRUE = 1
 };
 
 typedef enum myBool Bool;
+
+enum status {
+    GREEN,
+    ORANGE,
+    RED,
+    NONE
+};
+
+typedef enum status Color;
 
 //Thrust Control
 unsigned int ThrusterControl = 0;
@@ -98,10 +109,11 @@ int randomInteger(int low, int high);
 
 void scheduleTask(TCB *tasks[6]);
 
-void print(char str[], int length, int color, int line);
+void print(char str[], Color color, int line);
 
 int randomSeed = 1;
 
+/*
 void print(char str[], int length, int color, int line) {
 	//To flash the selected line, you must print exact same string black then recolor
 	for (int i = 0; i < length; i++) {
@@ -110,6 +122,7 @@ void print(char str[], int length, int color, int line) {
 		tft.print(str[i]);
 	}
 }
+ */
 
 void run() {
     TCB *queue[6];
@@ -237,9 +250,10 @@ void powerSubsystemTask(void *powerSubsystemData) {
         }
 
         //powerGeneration
-        if (data->solarPanelState) {
+        if (*data->solarPanelState) {
             if (*data->batteryLevel > 95) {
                 *data->solarPanelState = FALSE;
+                *data->powerGeneration = 0;
             } else if (*data->batteryLevel < 50) {
                 //Increment the variable by 2 every even numbered time
                 if (executionCount % 2 == 0) {
@@ -258,14 +272,23 @@ void powerSubsystemTask(void *powerSubsystemData) {
                 *data->solarPanelState = TRUE;
             }
         }
-
         //batteryLevel
         if (*data->solarPanelState) { //If deployed
-            *data->batteryLevel = *data->batteryLevel - (*(data->powerConsumption)) + (*(data->powerConsumption));
+            short result = *data->batteryLevel - (*(data->powerConsumption)) + (*(data->powerGeneration));
+            if (result < 0) {
+                *data->batteryLevel = 0;
+            } else {
+                *data->batteryLevel = (unsigned short)result;
+            }
         } else { //If not deplyed
-            *data->batteryLevel = *data->batteryLevel - 3 * (*(data->powerConsumption));
+            int result = *data->batteryLevel - 3 * (*(data->powerConsumption));
+            if (result < 0) {
+                *data->batteryLevel = 0;
+            } else {
+                *data->batteryLevel = (unsigned short)result;
+            }
         }
-        nextExecutionTime = systemTime() + 5000;
+        nextExecutionTime = systemTime() + delay;
         executionCount++;
     }
 }
@@ -282,12 +305,16 @@ void thrusterSubsystemTask(void *thrusterSubsystemData) {
         unsigned int magnitude = (signal & (0xF0)) >> 4; // Get the 5-7th bit and shift if back down
         unsigned int duration = (signal & (0xFF00)) >> 8;
 
-        printf("thrusterSubsystemTask\n");
+        //printf("\t\tDirection %d\n", direction);
+        //printf("\t\tMagnitude %d\n", magnitude);
+        //printf("\t\tDuration %d\n", duration);
+
+        //printf("thrusterSubsystemTask\n");
 
         //TODO Change the fuel level based on the extracted values
 
 
-        nextExecutionTime = systemTime() + 5000;
+        nextExecutionTime = systemTime() + delay;
     }
 
 }
@@ -310,7 +337,7 @@ void satelliteComsTask(void *satelliteComsData) {
     static unsigned long nextExecutionTime = 0;
     if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
         SatelliteComsData *data = (SatelliteComsData *) satelliteComsData;
-        printf("satelliteComsTask\n");
+        //printf("satelliteComsTask\n");
         //TODO: In future labs, send the following data:
         /*
             * Fuel Low
@@ -323,7 +350,7 @@ void satelliteComsTask(void *satelliteComsData) {
          */
 
         *(data->thrusterControl) = getRandomThrustSignal();
-        nextExecutionTime = systemTime() + 5000;
+        nextExecutionTime = systemTime() + delay;
     }
 }
 
@@ -331,35 +358,93 @@ void consoleDisplayTask(void *consoleDisplayData) {
     static unsigned long nextExecutionTime = 0;
     if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
         ConsoleDisplayData *data = (ConsoleDisplayData *) consoleDisplayData;
-        Bool inStatusMode = TRUE; //TODO get this from some extranal input
-        printf("consoleDisplayTask\n");
+        Bool inStatusMode = FALSE; //TODO get this from some external input
+        //printf("consoleDisplayTask\n");
         if (inStatusMode) {
             //Print
             //Solar Panel State
             //Battery Level
             //Fuel Level
             //Power Consumption
+            printf("\tSolar Panel State: %s\n", *data->solarPanelState ? " ON" : "OFF");
+            printf("\tBattery Level: %d\n", *data->batteryLevel);
+            printf("\tFuel Level: %d\n", *data->fuelLevel);
+            printf("\tPower Consumption: %d\n", *data->powerConsumption);
+            printf("\tPower Generation: %d\n", *data->powerGeneration);
         } else {
 
         }
-        nextExecutionTime = systemTime() + 5000;
+        nextExecutionTime = systemTime() + delay;
     }
 }
 
 void warningAlarmTask(void *warningAlarmData) {
-    static unsigned long nextExecutionTime = 0;
-    if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
-        WarningAlarmData *data = (WarningAlarmData *) warningAlarmData;
-        static unsigned int executationCount = 0;
-        printf("warningAlarmTask\n");
-        nextExecutionTime = systemTime() + 1000;
-        if(*data->fuelLevel <= 10) {
+    WarningAlarmData *data = (WarningAlarmData *) warningAlarmData;
+    //printf("warningAlarmTask\n");
+    static Color fuelStatus = NONE;
+    static Color batteryStatus = NONE;
+    static unsigned long hideFuelTime = 0;
+    static unsigned long showFuelTime = 0;
+    static unsigned long hideBatteryTime = 0;
+    static unsigned long showBatteryTime = 0;
 
-        } else if(*data->fuelLevel <= 50) {
+    int fuelDelay = (*data->fuelLevel <= 10) ? 2000 : 1000;
+    Color fuelColor = (*data->fuelLevel <= 10) ? RED : ORANGE;
 
+    if (*data->fuelLevel <= 50) {
+        if (fuelStatus == fuelColor) {
+            if (showFuelTime == 0) { //If showing fuel status
+                if (hideFuelTime < systemTime()) {
+                    showFuelTime = systemTime() + fuelDelay;
+                    hideFuelTime = 0;
+                    //TODO hide fuel status with color fuelColor
+                    print("FUEL[HIDDEN]", fuelColor, 0);
+                }
+            } else { //If hiding fuel status
+                if (showFuelTime < systemTime()) {
+                    hideFuelTime = systemTime() + fuelDelay;
+                    showFuelTime = 0;
+                    //TODO show fuel status with fuelColor
+                    print("FUEL", fuelColor, 0);
+                }
+            }
         } else {
-            //TODO print green values
+            fuelStatus = fuelColor;
+            print("FUEL", fuelColor, 0);
+            hideFuelTime = systemTime() + fuelDelay;
         }
+    } else if (fuelStatus != GREEN) {
+        print("FUEL", GREEN, 0);
+        fuelStatus = GREEN;
+    }
+
+    int batteryDelay = (*data->batteryLevel <= 10) ? 1000 : 2000;
+    Color batteryColor = (*data->batteryLevel <= 10) ? RED : ORANGE;
+    if (*data->batteryLevel <= 50) {
+        if (batteryStatus == batteryColor) {
+            if (showBatteryTime == 0) { //If showing battery status
+                if (hideBatteryTime < systemTime()) {
+                    showBatteryTime = systemTime() + batteryDelay;
+                    hideBatteryTime = 0;
+                    //TODO hide battery status with color batteryColor
+                    print("BATTERY[HIDDEN]", batteryColor, 1);
+                }
+            } else { //If hiding battery status
+                if (showBatteryTime < systemTime()) {
+                    hideBatteryTime = systemTime() + batteryDelay;
+                    showBatteryTime = 0;
+                    //TODO show battery status
+                    print("BATTERY", batteryColor, 1);
+                }
+            }
+        } else {
+            batteryStatus = batteryColor;
+            print("BATTERY", batteryColor, 1);
+            hideBatteryTime = systemTime() + batteryDelay;
+        }
+    } else if (batteryStatus != GREEN) {
+        print("BATTERY", GREEN, 1);
+        batteryStatus = GREEN;
     }
 }
 
@@ -388,6 +473,23 @@ int randomInteger(int low, int high) {
     }
 
     return retVal;
+}
+
+void print(char str[], Color color, int line) {
+    switch (color) {
+        case GREEN:
+            printf("\t%s GREEN %d\n", str, line);
+            break;
+        case ORANGE:
+            printf("\t%s ORANGE %d\n", str, line);
+            break;
+        case RED:
+            printf("\t%s RED %d\n", str, line);
+            break;
+        case NONE:
+            printf("\t%s NONE %d\n", str, line);
+            break;
+    }
 }
 
 unsigned long systemTime() {
