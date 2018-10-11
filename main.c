@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
+#include <time.h>
 
 enum myBool {
     FALSE = 0, TRUE = 1
@@ -97,7 +98,7 @@ int randomInteger(int low, int high);
 
 void scheduleTask(TCB *tasks[6]);
 
-void delay(unsigned long delayMs);
+void print(char str[], int length, int color, int line);
 
 int randomSeed = 1;
 
@@ -178,6 +179,7 @@ void run() {
     warningAlarm.task = &warningAlarmTask;
 
     queue[4] = &warningAlarm;
+    queue[5] = 0x0;
 
     scheduleTask(queue);
 }
@@ -188,20 +190,22 @@ void scheduleTask(TCB *tasks[6]) {
         //Major cycle
         while (currentTaskIndex < 6) {
             TCB *task = tasks[currentTaskIndex];
-            task->task(task->taskDataPtr);
-            delay(50);
+            if (task != 0x0) { //Filter out null pointer
+                task->task(task->taskDataPtr);
+            }
             currentTaskIndex++;
         }
+        currentTaskIndex = 0;
     }
 }
 
 void powerSubsystemTask(void *powerSubsystemData) {
-    PowerSubsystemData *data = (PowerSubsystemData *) powerSubsystemData;
     //Count of the number times this function is called.
     // It is okay if this number wraps to 0 because we just care about if the function call is odd or even
     static unsigned long nextExecutionTime = 0;
-    static unsigned int executionCount = 0;
-    if(executionCount == 0 || systemTime() > nextExecutionTime) {
+    if (nextExecutionTime == 0 || systemTime() > nextExecutionTime) {
+        PowerSubsystemData *data = (PowerSubsystemData *) powerSubsystemData;
+        static unsigned int executionCount = 0;
         //powerConsumption
         static Bool consumptionIncreasing = TRUE;
         if (consumptionIncreasing) {
@@ -259,16 +263,24 @@ void powerSubsystemTask(void *powerSubsystemData) {
 }
 
 void thrusterSubsystemTask(void *thrusterSubsystemData) {
-    ThrusterSubsystemData *data = (ThrusterSubsystemData *) thrusterSubsystemData;
-    unsigned short left = 0, right = 0, up = 0, down = 0;
+    static unsigned long nextExecutionTime = 0;
+    if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
+        ThrusterSubsystemData *data = (ThrusterSubsystemData *) thrusterSubsystemData;
+        unsigned short left = 0, right = 0, up = 0, down = 0;
 
-    unsigned int signal = *(data->thrusterControl);
+        unsigned int signal = *(data->thrusterControl);
 
-    unsigned int direction = signal & (0xF); // Get the last 4 bits
-    unsigned int magnitude = (signal & (0xF0)) >> 4; // Get the 5-7th bit and shift if back down
-    unsigned int duration = (signal & (0xFF00)) >> 8;
+        unsigned int direction = signal & (0xF); // Get the last 4 bits
+        unsigned int magnitude = (signal & (0xF0)) >> 4; // Get the 5-7th bit and shift if back down
+        unsigned int duration = (signal & (0xFF00)) >> 8;
 
-    //TODO Change the fuel level based on the extracted values
+        printf("thrusterSubsystemTask\n");
+
+        //TODO Change the fuel level based on the extracted values
+
+
+        nextExecutionTime = systemTime() + 5000;
+    }
 
 }
 
@@ -287,39 +299,60 @@ unsigned int getRandomThrustSignal() {
 }
 
 void satelliteComsTask(void *satelliteComsData) {
-    SatelliteComsData *data = (SatelliteComsData *) satelliteComsData;
+    static unsigned long nextExecutionTime = 0;
+    if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
+        SatelliteComsData *data = (SatelliteComsData *) satelliteComsData;
+        printf("satelliteComsTask\n");
+        //TODO: In future labs, send the following data:
+        /*
+            * Fuel Low
+            * Battery Low
+            * Solar Panel State
+            * Battery Level
+            * Fuel Level
+            * Power Consumption
+            * Power Generation
+         */
 
-    //TODO: In future labs, send the following data:
-    /*
-        * Fuel Low
-        * Battery Low
-        * Solar Panel State
-        * Battery Level
-        * Fuel Level
-        * Power Consumption
-        * Power Generation
-     */
-
-    *(data->thrusterControl) = getRandomThrustSignal();
+        *(data->thrusterControl) = getRandomThrustSignal();
+        nextExecutionTime = systemTime() + 5000;
+    }
 }
 
 void consoleDisplayTask(void *consoleDisplayData) {
-    ConsoleDisplayData *data = (ConsoleDisplayData *) consoleDisplayData;
-    Bool inStatusMode = TRUE; //TODO get this from some extranal input
-    if (inStatusMode) {
-        //Print
-        //Solar Panel State
-        //Battery Level
-        //Fuel Level
-        //Power Consumption
-    } else {
+    static unsigned long nextExecutionTime = 0;
+    if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
+        ConsoleDisplayData *data = (ConsoleDisplayData *) consoleDisplayData;
+        Bool inStatusMode = TRUE; //TODO get this from some extranal input
+        printf("consoleDisplayTask\n");
+        if (inStatusMode) {
+            //Print
+            //Solar Panel State
+            //Battery Level
+            //Fuel Level
+            //Power Consumption
+        } else {
 
+        }
+        nextExecutionTime = systemTime() + 5000;
     }
 }
 
 void warningAlarmTask(void *warningAlarmData) {
-    WarningAlarmData *data = (WarningAlarmData *) warningAlarmData;
+    static unsigned long nextExecutionTime = 0;
+    if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
+        WarningAlarmData *data = (WarningAlarmData *) warningAlarmData;
+        static unsigned int executationCount = 0;
+        printf("warningAlarmTask\n");
+        nextExecutionTime = systemTime() + 1000;
+        if(*data->fuelLevel <= 10) {
 
+        } else if(*data->fuelLevel <= 50) {
+
+        } else {
+            //TODO print green values
+        }
+    }
 }
 
 
@@ -347,6 +380,10 @@ int randomInteger(int low, int high) {
     }
 
     return retVal;
+}
+
+unsigned long systemTime() {
+    return (unsigned long) time(NULL) * 1000;
 }
 
 

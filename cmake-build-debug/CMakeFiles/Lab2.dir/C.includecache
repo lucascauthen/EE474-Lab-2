@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/admin/Google Drive/School/EE/EE 474/Lab2/EE474-Lab-2/main.c
+stdlib.h
+-
+stdio.h
+-
+limits.h
+-
+time.h
+-
+
