@@ -11,14 +11,14 @@ enum myBool {
 
 typedef enum myBool Bool;
 
-enum status {
+enum color {
     GREEN,
     ORANGE,
     RED,
     NONE
 };
 
-typedef enum status Color;
+typedef enum color Color;
 
 //Thrust Control
 unsigned int ThrusterControl = 0;
@@ -398,7 +398,7 @@ void warningAlarmTask(void *warningAlarmData) {
                     showFuelTime = systemTime() + fuelDelay;
                     hideFuelTime = 0;
                     //TODO hide fuel status with color fuelColor
-                    print("FUEL[HIDDEN]", fuelColor, 0);
+                    print("FUEL", NONE, 0);
                 }
             } else { //If hiding fuel status
                 if (showFuelTime < systemTime()) {
@@ -427,7 +427,7 @@ void warningAlarmTask(void *warningAlarmData) {
                     showBatteryTime = systemTime() + batteryDelay;
                     hideBatteryTime = 0;
                     //TODO hide battery status with color batteryColor
-                    print("BATTERY[HIDDEN]", batteryColor, 1);
+                    print("BATTERY", NONE, 1);
                 }
             } else { //If hiding battery status
                 if (showBatteryTime < systemTime()) {
@@ -487,7 +487,7 @@ void print(char str[], Color color, int line) {
             printf("\t%s RED %d\n", str, line);
             break;
         case NONE:
-            printf("\t%s NONE %d\n", str, line);
+            printf("\t%s BLACK %d\n", str, line);
             break;
     }
 }
