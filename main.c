@@ -102,6 +102,14 @@ void print(char str[], int length, int color, int line);
 
 int randomSeed = 1;
 
+void print(char str[], int length, int color, int line) {
+	//To flash the selected line, you must print exact same string black then recolor
+	for (int i = 0; i < length; i++) {
+		tft.setTextColor(color);
+		tft.setCursor(i*12, line*16);
+		tft.print(str[i]);
+	}
+}
 
 void run() {
     TCB *queue[6];
