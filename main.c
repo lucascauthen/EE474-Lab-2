@@ -91,7 +91,7 @@ void consoleDisplayTask(void *consoleDisplayData);
 
 void warningAlarmTask(void *warningAlarmData);
 
-unsigned long systemTime; //TODO Implement this behavior
+unsigned long systemTime(); //TODO Implement this behavior
 
 int randomInteger(int low, int high);
 
@@ -182,11 +182,6 @@ void run() {
     scheduleTask(queue);
 }
 
-void delay(unsigned long delayMs) {
-    systemTime += delayMs;
-    //TODO add sleep function
-}
-
 void scheduleTask(TCB *tasks[6]) {
     unsigned int currentTaskIndex = 0;
     while (1) {
@@ -197,8 +192,6 @@ void scheduleTask(TCB *tasks[6]) {
             delay(50);
             currentTaskIndex++;
         }
-        //Minor cycle
-        //TODO
     }
 }
 
@@ -206,60 +199,63 @@ void powerSubsystemTask(void *powerSubsystemData) {
     PowerSubsystemData *data = (PowerSubsystemData *) powerSubsystemData;
     //Count of the number times this function is called.
     // It is okay if this number wraps to 0 because we just care about if the function call is odd or even
+    static unsigned long nextExecutionTime = 0;
     static unsigned int executionCount = 0;
-
-    //powerConsumption
-    static Bool consumptionIncreasing = TRUE;
-    if (consumptionIncreasing) {
-        if (executionCount % 2 == 0) {
-            *(data->powerConsumption) += 2;
-        } else {
-            *(data->powerConsumption) -= 1;
-        }
-        if (*(data->powerConsumption) > 10) {
-            consumptionIncreasing = FALSE;
-        }
-    } else {
-        if (executionCount % 2 == 0) {
-            *(data->powerConsumption) -= 2;
-        } else {
-            *(data->powerConsumption) += 1;
-        }
-        if (*(data->powerConsumption) < 5) {
-            consumptionIncreasing = TRUE;
-        }
-    }
-
-    //powerGeneration
-    if (data->solarPanelState) {
-        if (*data->batteryLevel > 95) {
-            *data->solarPanelState = FALSE;
-        } else if (*data->batteryLevel < 50) {
-            //Increment the variable by 2 every even numbered time
+    if(executionCount == 0 || systemTime() > nextExecutionTime) {
+        //powerConsumption
+        static Bool consumptionIncreasing = TRUE;
+        if (consumptionIncreasing) {
             if (executionCount % 2 == 0) {
-                (*data->powerGeneration) += 2;
-            } else { //Increment the variable by 1 every odd numbered time
-                (*data->powerGeneration) += 1;
+                *(data->powerConsumption) += 2;
+            } else {
+                *(data->powerConsumption) -= 1;
+            }
+            if (*(data->powerConsumption) > 10) {
+                consumptionIncreasing = FALSE;
             }
         } else {
-            //Increment the variable by 2 every even numbered time
             if (executionCount % 2 == 0) {
-                (*data->powerGeneration) += 2;
+                *(data->powerConsumption) -= 2;
+            } else {
+                *(data->powerConsumption) += 1;
+            }
+            if (*(data->powerConsumption) < 5) {
+                consumptionIncreasing = TRUE;
             }
         }
-    } else {
-        if (*data->batteryLevel <= 10) {
-            *data->solarPanelState = TRUE;
-        }
-    }
 
-    //batteryLevel
-    if (*data->solarPanelState) { //If deployed
-        *data->batteryLevel = *data->batteryLevel - (*(data->powerConsumption)) + (*(data->powerConsumption));
-    } else { //If not deplyed
-        *data->batteryLevel = *data->batteryLevel - 3 * (*(data->powerConsumption));
+        //powerGeneration
+        if (data->solarPanelState) {
+            if (*data->batteryLevel > 95) {
+                *data->solarPanelState = FALSE;
+            } else if (*data->batteryLevel < 50) {
+                //Increment the variable by 2 every even numbered time
+                if (executionCount % 2 == 0) {
+                    (*data->powerGeneration) += 2;
+                } else { //Increment the variable by 1 every odd numbered time
+                    (*data->powerGeneration) += 1;
+                }
+            } else {
+                //Increment the variable by 2 every even numbered time
+                if (executionCount % 2 == 0) {
+                    (*data->powerGeneration) += 2;
+                }
+            }
+        } else {
+            if (*data->batteryLevel <= 10) {
+                *data->solarPanelState = TRUE;
+            }
+        }
+
+        //batteryLevel
+        if (*data->solarPanelState) { //If deployed
+            *data->batteryLevel = *data->batteryLevel - (*(data->powerConsumption)) + (*(data->powerConsumption));
+        } else { //If not deplyed
+            *data->batteryLevel = *data->batteryLevel - 3 * (*(data->powerConsumption));
+        }
+        nextExecutionTime = systemTime() + 5000;
+        executionCount++;
     }
-    executionCount++;
 }
 
 void thrusterSubsystemTask(void *thrusterSubsystemData) {
