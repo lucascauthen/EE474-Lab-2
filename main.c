@@ -312,7 +312,9 @@ void thrusterSubsystemTask(void *thrusterSubsystemData) {
         //printf("thrusterSubsystemTask\n");
 
         //TODO Change the fuel level based on the extracted values
-
+	    if (data->fuelLevel > 0 && duration != 0) {
+		data->fuelLevel -= duration; //magnitude at this point is full on and full off
+	    }
 
         nextExecutionTime = systemTime() + delay;
     }
