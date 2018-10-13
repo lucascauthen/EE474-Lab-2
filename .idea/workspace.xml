@@ -12,8 +12,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="26b41b4e-733d-48f7-b1d5-824d6be5a451" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/arduino_sketch.ino" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/arduino_sketch/arduino_sketch.ino" beforeDir="false" afterPath="$PROJECT_DIR$/arduino_sketch/arduino_sketch.ino" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/main.c" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
@@ -52,12 +51,12 @@
       <usages-collector id="statistics.cidr.testingFrameworks.usages" />
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="ObjectiveC" value="3893" />
+          <entry key="ObjectiveC" value="5360" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="c" value="3893" />
+          <entry key="c" value="5360" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.vcs.git.usages" />
@@ -68,10 +67,10 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="75">
-              <caret line="5" column="13" selection-start-line="5" selection-start-column="5" selection-end-line="5" selection-end-column="13" />
+            <state relative-caret-position="728">
+              <caret line="647" column="49" selection-start-line="647" selection-start-column="49" selection-end-line="647" selection-end-column="49" />
               <folding>
-                <element signature="e#0#19#0" expanded="true" />
+                <element signature="e#4465#4531#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -117,6 +116,7 @@
       <find>solarPanelState</find>
       <find>5000</find>
       <find>data-&gt;</find>
+      <find>printTaskTiming</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -139,7 +139,7 @@
   <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
   <component name="ProjectFrameBounds">
     <option name="x" value="143" />
-    <option name="y" value="49" />
+    <option name="y" value="48" />
     <option name="width" value="1400" />
     <option name="height" value="987" />
   </component>
@@ -209,12 +209,12 @@
       <workItem from="1539120758056" duration="4313000" />
       <workItem from="1539287852114" duration="10214000" />
       <workItem from="1539299285720" duration="188000" />
-      <workItem from="1539465544739" duration="872000" />
+      <workItem from="1539465544739" duration="4024000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="15631000" />
+    <option name="totallyTimeSpent" value="18783000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -226,7 +226,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="143" y="49" width="1400" height="987" extended-state="0" />
+    <frame x="143" y="48" width="1400" height="987" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.26067746" />
@@ -262,7 +262,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/main.c</url>
-          <line>268</line>
+          <line>54</line>
           <option name="timeStamp" value="6" />
         </line-breakpoint>
       </breakpoints>
@@ -272,10 +272,10 @@
     <entry file="file://$PROJECT_DIR$/.gitignore" />
     <entry file="file://$PROJECT_DIR$/main.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
-          <caret line="5" column="13" selection-start-line="5" selection-start-column="5" selection-end-line="5" selection-end-column="13" />
+        <state relative-caret-position="728">
+          <caret line="647" column="49" selection-start-line="647" selection-start-column="49" selection-end-line="647" selection-end-column="49" />
           <folding>
-            <element signature="e#0#19#0" expanded="true" />
+            <element signature="e#4465#4531#0" expanded="true" />
           </folding>
         </state>
       </provider>

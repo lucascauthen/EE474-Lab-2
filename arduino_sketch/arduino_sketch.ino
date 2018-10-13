@@ -47,14 +47,15 @@ Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 // a simpler declaration can optionally be used:
 // Elegoo_TFTLCD tft;
 
-long runDelay = 5000;
-long randomGenerationSeed = 1000;
-
 enum myBool {
     FALSE = 0, TRUE = 1
 };
-
 typedef enum myBool Bool;
+
+long runDelay = 5000;
+long randomGenerationSeed = 1000;
+Bool shouldPrintTaskTiming = TRUE;
+
 
 //Thrust Control
 unsigned int ThrusterControl = 0;
@@ -129,90 +130,101 @@ struct WarningAlarmDataStruct {
 };
 typedef struct WarningAlarmDataStruct WarningAlarmData;
 
+
+//Controls the execution of the power subsystem
 void powerSubsystemTask(void *powerSubsystemData);
 
+//Controls the execution of the thruster subsystem
 void thrusterSubsystemTask(void *thrusterSubsystemData);
 
+//Controls the execution of the satellite coms subsystem
 void satelliteComsTask(void *satelliteComsData);
 
+//Controls the execution of the console display subsystem
 void consoleDisplayTask(void *consoleDisplayData);
 
+//Controls the execution of the warning alarm subsystem
 void warningAlarmTask(void *warningAlarmData);
 
-unsigned long systemTime(); //TODO Implement this behavior
+//Returns the current system time in milliseconds
+unsigned long systemTime();
 
+//Returns a random integer between low and high inclusively
 int randomInteger(int low, int high);
 
+//Runs the loop of all six tasks, does not run the task if the task pointer is null
 void scheduleTask(TCB *tasks[6]);
 
+//Prints a string to the tft given text, the length of the text, a color, and a line number
 void print(char str[], int length, int color, int line);
 
-void scheduleTask(TCB *tasks[6]);
-
+//Starts up the system by creating all the objects that are needed to run the system
 void setupSystem();
 
+//Prints timing information for a function based on its last runtime
+void printTaskTiming(char taskName[], unsigned long lastRunTime);
 
 
+//Arduino setup function
 void setup(void) {
-  Serial.begin(9600); //Sets baud rate to 9600
-  Serial.println(F("TFT LCD test")); //Prints to serial monitor
+    Serial.begin(9600); //Sets baud rate to 9600
+    Serial.println(F("TFT LCD test")); //Prints to serial monitor
 
 //determines if shield or board
 #ifdef USE_Elegoo_SHIELD_PINOUT
-  Serial.println(F("Using Elegoo 2.4\" TFT Arduino Shield Pinout"));
+    Serial.println(F("Using Elegoo 2.4\" TFT Arduino Shield Pinout"));
 #else
-  Serial.println(F("Using Elegoo 2.4\" TFT Breakout Board Pinout"));
+    Serial.println(F("Using Elegoo 2.4\" TFT Breakout Board Pinout"));
 #endif
 
-  //prints out tft size
-  Serial.print("TFT size is "); Serial.print(tft.width()); Serial.print("x"); Serial.println(tft.height());
+    //prints out tft size
+    Serial.print("TFT size is ");
+    Serial.print(tft.width());
+    Serial.print("x");
+    Serial.println(tft.height());
 
-  tft.reset();
-  tft.setTextSize(2);
-  //prints out the current LCD driver version
-   uint16_t identifier = tft.readID();
-   if(identifier == 0x9325) {
-    Serial.println(F("Found ILI9325 LCD driver"));
-  } else if(identifier == 0x9328) {
-    Serial.println(F("Found ILI9328 LCD driver"));
-  } else if(identifier == 0x4535) {
-    Serial.println(F("Found LGDP4535 LCD driver"));
-  }else if(identifier == 0x7575) {
-    Serial.println(F("Found HX8347G LCD driver"));
-  } else if(identifier == 0x9341) {
-    Serial.println(F("Found ILI9341 LCD driver"));
-  } else if(identifier == 0x8357) {
-    Serial.println(F("Found HX8357D LCD driver"));
-  } else if(identifier==0x0101)
-  {     
-      identifier=0x9341;
-       Serial.println(F("Found 0x9341 LCD driver"));
-  }
-  else if(identifier==0x1111)
-  {     
-      identifier=0x9328;
-       Serial.println(F("Found 0x9328 LCD driver"));
-  }
-  else { //prints to serial monitor if wiring is bad or unknown LCD driver
-    Serial.print(F("Unknown LCD driver chip: "));
-    Serial.println(identifier, HEX);
-    Serial.println(F("If using the Elegoo 2.8\" TFT Arduino shield, the line:"));
-    Serial.println(F("  #define USE_Elegoo_SHIELD_PINOUT"));
-    Serial.println(F("should appear in the library header (Elegoo_TFT.h)."));
-    Serial.println(F("If using the breakout board, it should NOT be #defined!"));
-    Serial.println(F("Also if using the breakout, double-check that all wiring"));
-    Serial.println(F("matches the tutorial."));
-    identifier=0x9328;
-  
-  }
-  tft.begin(identifier);
-  tft.fillScreen(NONE);
+    tft.reset();
+    tft.setTextSize(2);
+    //prints out the current LCD driver version
+    uint16_t identifier = tft.readID();
+    if (identifier == 0x9325) {
+        Serial.println(F("Found ILI9325 LCD driver"));
+    } else if (identifier == 0x9328) {
+        Serial.println(F("Found ILI9328 LCD driver"));
+    } else if (identifier == 0x4535) {
+        Serial.println(F("Found LGDP4535 LCD driver"));
+    } else if (identifier == 0x7575) {
+        Serial.println(F("Found HX8347G LCD driver"));
+    } else if (identifier == 0x9341) {
+        Serial.println(F("Found ILI9341 LCD driver"));
+    } else if (identifier == 0x8357) {
+        Serial.println(F("Found HX8357D LCD driver"));
+    } else if (identifier == 0x0101) {
+        identifier = 0x9341;
+        Serial.println(F("Found 0x9341 LCD driver"));
+    } else if (identifier == 0x1111) {
+        identifier = 0x9328;
+        Serial.println(F("Found 0x9328 LCD driver"));
+    } else { //prints to serial monitor if wiring is bad or unknown LCD driver
+        Serial.print(F("Unknown LCD driver chip: "));
+        Serial.println(identifier, HEX);
+        Serial.println(F("If using the Elegoo 2.8\" TFT Arduino shield, the line:"));
+        Serial.println(F("  #define USE_Elegoo_SHIELD_PINOUT"));
+        Serial.println(F("should appear in the library header (Elegoo_TFT.h)."));
+        Serial.println(F("If using the breakout board, it should NOT be #defined!"));
+        Serial.println(F("Also if using the breakout, double-check that all wiring"));
+        Serial.println(F("matches the tutorial."));
+        identifier = 0x9328;
+
+    }
+    tft.begin(identifier);
+    tft.fillScreen(NONE);
 
 }
 
-void loop(void) 
-{
-  setupSystem();
+//Arduino loop
+void loop(void) {
+    setupSystem();
 }
 
 void setupSystem() {
@@ -315,7 +327,10 @@ void powerSubsystemTask(void *powerSubsystemData) {
     //Count of the number times this function is called.
     // It is okay if this number wraps to 0 because we just care about if the function call is odd or even
     static unsigned long nextExecutionTime = 0;
+    static unsigned long lastExecutionTime = 0;
     if (nextExecutionTime == 0 || systemTime() > nextExecutionTime) {
+        printTaskTiming("powerSubsystemTask", lastExecutionTime);
+        lastExecutionTime = systemTime();
         PowerSubsystemData *data = (PowerSubsystemData *) powerSubsystemData;
         static unsigned int executionCount = 0;
         //powerConsumption
@@ -369,14 +384,14 @@ void powerSubsystemTask(void *powerSubsystemData) {
             if (result < 0) {
                 *data->batteryLevel = 0;
             } else {
-                *data->batteryLevel = (unsigned short)result;
+                *data->batteryLevel = min((unsigned short) result, 100);
             }
         } else { //If not deplyed
             int result = *data->batteryLevel - 3 * (*(data->powerConsumption));
             if (result < 0) {
                 *data->batteryLevel = 0;
             } else {
-                *data->batteryLevel = (unsigned short)result;
+                *data->batteryLevel = (unsigned short) result;
             }
         }
         nextExecutionTime = systemTime() + runDelay;
@@ -386,7 +401,10 @@ void powerSubsystemTask(void *powerSubsystemData) {
 
 void thrusterSubsystemTask(void *thrusterSubsystemData) {
     static unsigned long nextExecutionTime = 0;
+    static unsigned long lastExecutionTime = 0;
     if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
+        printTaskTiming("thrusterSubsystemTask", lastExecutionTime);
+        lastExecutionTime = systemTime();
         ThrusterSubsystemData *data = (ThrusterSubsystemData *) thrusterSubsystemData;
         unsigned short left = 0, right = 0, up = 0, down = 0;
 
@@ -403,6 +421,12 @@ void thrusterSubsystemTask(void *thrusterSubsystemData) {
         //printf("thrusterSubsystemTask\n");
 
         //TODO Change the fuel level based on the extracted values
+        if (*data->fuelLevel > 0 && (int) *data->fuelLevel >= ((int) *data->fuelLevel - 4 * duration / 100)) {
+            *data->fuelLevel = max(0, *data->fuelLevel -
+                                      4 * duration / 100); //magnitude at this point is full on and full off
+        } else {
+            *data->fuelLevel = 0;
+        }
 
 
         nextExecutionTime = systemTime() + runDelay;
@@ -426,7 +450,10 @@ unsigned int getRandomThrustSignal() {
 
 void satelliteComsTask(void *satelliteComsData) {
     static unsigned long nextExecutionTime = 0;
+    static unsigned long lastExecutionTime = 0;
     if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
+        printTaskTiming("satelliteComsTask", lastExecutionTime);
+        lastExecutionTime = systemTime();
         SatelliteComsData *data = (SatelliteComsData *) satelliteComsData;
         //printf("satelliteComsTask\n");
         //TODO: In future labs, send the following data:
@@ -447,7 +474,10 @@ void satelliteComsTask(void *satelliteComsData) {
 
 void consoleDisplayTask(void *consoleDisplayData) {
     static unsigned long nextExecutionTime = 0;
+    static unsigned long lastExecutionTime = 0;
     if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
+        printTaskTiming("consoleDisplayTask", lastExecutionTime);
+        lastExecutionTime = systemTime();
         ConsoleDisplayData *data = (ConsoleDisplayData *) consoleDisplayData;
         Bool inStatusMode = TRUE; //TODO get this from some external input
         //printf("consoleDisplayTask\n");
@@ -467,10 +497,16 @@ void consoleDisplayTask(void *consoleDisplayData) {
             Serial.println(*data->powerConsumption);
             Serial.print("\tPower Generation: ");
             Serial.println(*data->powerGeneration);
-           
-        } else {
 
+        } else {
+            if (*data->fuelLow == TRUE) {
+                Serial.println("Fuel Low!");
+            }
+            if (*data->batteryLow== TRUE) {
+                Serial.println("Battery Low!");
+            }
         }
+        Serial.println();
         nextExecutionTime = systemTime() + runDelay;
     }
 }
@@ -485,6 +521,9 @@ void warningAlarmTask(void *warningAlarmData) {
     static unsigned long hideBatteryTime = 0;
     static unsigned long showBatteryTime = 0;
 
+    *data->fuelLow = *data->fuelLevel <= 10 ? TRUE : FALSE;
+    *data->batteryLow = *data->batteryLow <= 10 ? TRUE : FALSE;
+
     int fuelDelay = (*data->fuelLevel <= 10) ? 2000 : 1000;
     int fuelColor = (*data->fuelLevel <= 10) ? RED : ORANGE;
 
@@ -495,14 +534,14 @@ void warningAlarmTask(void *warningAlarmData) {
                     showFuelTime = systemTime() + fuelDelay;
                     hideFuelTime = 0;
                     //TODO hide fuel status with color fuelColor
-                    print("FUEL",4, NONE, 0);
+                    print("FUEL", 4, NONE, 0);
                 }
             } else { //If hiding fuel status
                 if (showFuelTime < systemTime()) {
                     hideFuelTime = systemTime() + fuelDelay;
                     showFuelTime = 0;
                     //TODO show fuel status with fuelColor
-                    print("FUEL",4, fuelColor, 0);
+                    print("FUEL", 4, fuelColor, 0);
                 }
             }
         } else {
@@ -573,12 +612,24 @@ int randomInteger(int low, int high) {
 }
 
 void print(char str[], int length, int color, int line) {
-  //To flash the selected line, you must print exact same string black then recolor
-  for (int i = 0; i < length; i++) {
-    tft.setTextColor(color);
-    tft.setCursor(i*12, line*16);
-    tft.print(str[i]);
-  }
+    //To flash the selected line, you must print exact same string black then recolor
+    for (int i = 0; i < length; i++) {
+        tft.setTextColor(color);
+        tft.setCursor(i * 12, line * 16);
+        tft.print(str[i]);
+    }
+}
+
+void printTaskTiming(char taskName[], unsigned long lastRunTime) {
+    if(shouldPrintTaskTiming) {
+        Serial.print(taskName);
+        Serial.print(" - cycle delay: ");
+        if(lastRunTime > 0) {
+            Serial.println((double) (systemTime() - lastRunTime) / 1000.0, 4);
+        } else {
+            Serial.println(0.0, 4);
+        }
+    }
 }
 
 unsigned long systemTime() {
