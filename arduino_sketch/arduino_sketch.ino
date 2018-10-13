@@ -1,24 +1,60 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <limits.h>
-#include <time.h>
 
-long runDelay = 1000;
+// IMPORTANT: ELEGOO_TFTLCD LIBRARY MUST BE SPECIFICALLY
+// CONFIGURED FOR EITHER THE TFT SHIELD OR THE BREAKOUT BOARD.
+// SEE RELEVANT COMMENTS IN Elegoo_TFTLCD.h FOR SETUP.
+//Technical support:goodtft@163.com
+
+#include <Elegoo_GFX.h>    // Core graphics library
+#include <Elegoo_TFTLCD.h> // Hardware-specific library
+#include <limits.h> // Used for random number generation
+
+// The control pins for the LCD can be assigned to any digital or
+// analog pins...but we'll use the analog pins as this allows us to
+// double up the pins with the touch screen (see the TFT paint example).
+#define LCD_CS A3 // Chip Select goes to Analog 3
+#define LCD_CD A2 // Command/Data goes to Analog 2
+#define LCD_WR A1 // LCD Write goes to Analog 1
+#define LCD_RD A0 // LCD Read goes to Analog 0
+
+#define LCD_RESET A4 // Can alternately just connect to Arduino's reset pin
+
+// When using the BREAKOUT BOARD only, use these 8 data lines to the LCD:
+// For the Arduino Uno, Duemilanove, Diecimila, etc.:
+//   D0 connects to digital pin 8  (Notice these are
+//   D1 connects to digital pin 9   NOT in order!)
+//   D2 connects to digital pin 2
+//   D3 connects to digital pin 3
+//   D4 connects to digital pin 4
+//   D5 connects to digital pin 5
+//   D6 connects to digital pin 6
+//   D7 connects to digital pin 7
+// For the Arduino Mega, use digital pins 22 through 29
+// (on the 2-row header at the end of the board).
+
+// Assign human-readable names to some common 16-bit color values:
+#define NONE   0x0000
+#define BLUE    0x001F
+#define RED     0xF800
+#define GREEN   0x07E0
+#define CYAN    0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW  0xFFE0
+#define WHITE   0xFFFF
+#define ORANGE  0xFC00
+
+Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
+// If using the shield, all control and data lines are fixed, and
+// a simpler declaration can optionally be used:
+// Elegoo_TFTLCD tft;
+
+long runDelay = 5000;
+long randomGenerationSeed = 1000;
 
 enum myBool {
     FALSE = 0, TRUE = 1
 };
 
 typedef enum myBool Bool;
-
-enum color {
-    GREEN,
-    ORANGE,
-    RED,
-    NONE
-};
-
-typedef enum color Color;
 
 //Thrust Control
 unsigned int ThrusterControl = 0;
@@ -109,22 +145,77 @@ int randomInteger(int low, int high);
 
 void scheduleTask(TCB *tasks[6]);
 
-void print(char str[], Color color, int line);
+void print(char str[], int length, int color, int line);
 
-int randomSeed = 1;
+void scheduleTask(TCB *tasks[6]);
 
-/*
-void print(char str[], int length, int color, int line) {
-	//To flash the selected line, you must print exact same string black then recolor
-	for (int i = 0; i < length; i++) {
-		tft.setTextColor(color);
-		tft.setCursor(i*12, line*16);
-		tft.print(str[i]);
-	}
+void setupSystem();
+
+
+
+void setup(void) {
+  Serial.begin(9600); //Sets baud rate to 9600
+  Serial.println(F("TFT LCD test")); //Prints to serial monitor
+
+//determines if shield or board
+#ifdef USE_Elegoo_SHIELD_PINOUT
+  Serial.println(F("Using Elegoo 2.4\" TFT Arduino Shield Pinout"));
+#else
+  Serial.println(F("Using Elegoo 2.4\" TFT Breakout Board Pinout"));
+#endif
+
+  //prints out tft size
+  Serial.print("TFT size is "); Serial.print(tft.width()); Serial.print("x"); Serial.println(tft.height());
+
+  tft.reset();
+  tft.setTextSize(2);
+  //prints out the current LCD driver version
+   uint16_t identifier = tft.readID();
+   if(identifier == 0x9325) {
+    Serial.println(F("Found ILI9325 LCD driver"));
+  } else if(identifier == 0x9328) {
+    Serial.println(F("Found ILI9328 LCD driver"));
+  } else if(identifier == 0x4535) {
+    Serial.println(F("Found LGDP4535 LCD driver"));
+  }else if(identifier == 0x7575) {
+    Serial.println(F("Found HX8347G LCD driver"));
+  } else if(identifier == 0x9341) {
+    Serial.println(F("Found ILI9341 LCD driver"));
+  } else if(identifier == 0x8357) {
+    Serial.println(F("Found HX8357D LCD driver"));
+  } else if(identifier==0x0101)
+  {     
+      identifier=0x9341;
+       Serial.println(F("Found 0x9341 LCD driver"));
+  }
+  else if(identifier==0x1111)
+  {     
+      identifier=0x9328;
+       Serial.println(F("Found 0x9328 LCD driver"));
+  }
+  else { //prints to serial monitor if wiring is bad or unknown LCD driver
+    Serial.print(F("Unknown LCD driver chip: "));
+    Serial.println(identifier, HEX);
+    Serial.println(F("If using the Elegoo 2.8\" TFT Arduino shield, the line:"));
+    Serial.println(F("  #define USE_Elegoo_SHIELD_PINOUT"));
+    Serial.println(F("should appear in the library header (Elegoo_TFT.h)."));
+    Serial.println(F("If using the breakout board, it should NOT be #defined!"));
+    Serial.println(F("Also if using the breakout, double-check that all wiring"));
+    Serial.println(F("matches the tutorial."));
+    identifier=0x9328;
+  
+  }
+  tft.begin(identifier);
+  tft.fillScreen(NONE);
+
 }
- */
 
-void run() {
+void loop(void) 
+{
+  setupSystem();
+}
+
+void setupSystem() {
     TCB *queue[6];
 
     /*
@@ -358,7 +449,7 @@ void consoleDisplayTask(void *consoleDisplayData) {
     static unsigned long nextExecutionTime = 0;
     if (nextExecutionTime == 0 || nextExecutionTime < systemTime()) {
         ConsoleDisplayData *data = (ConsoleDisplayData *) consoleDisplayData;
-        Bool inStatusMode = FALSE; //TODO get this from some external input
+        Bool inStatusMode = TRUE; //TODO get this from some external input
         //printf("consoleDisplayTask\n");
         if (inStatusMode) {
             //Print
@@ -366,11 +457,17 @@ void consoleDisplayTask(void *consoleDisplayData) {
             //Battery Level
             //Fuel Level
             //Power Consumption
-            printf("\tSolar Panel State: %s\n", *data->solarPanelState ? " ON" : "OFF");
-            printf("\tBattery Level: %d\n", *data->batteryLevel);
-            printf("\tFuel Level: %d\n", *data->fuelLevel);
-            printf("\tPower Consumption: %d\n", *data->powerConsumption);
-            printf("\tPower Generation: %d\n", *data->powerGeneration);
+            Serial.print("\tSolar Panel State: ");
+            Serial.println((*data->solarPanelState ? " ON" : "OFF"));
+            Serial.print("\tBattery Level: ");
+            Serial.println(*data->batteryLevel);
+            Serial.print("\tFuel Level: ");
+            Serial.println(*data->fuelLevel);
+            Serial.print("\tPower Consumption: ");
+            Serial.println(*data->powerConsumption);
+            Serial.print("\tPower Generation: ");
+            Serial.println(*data->powerGeneration);
+           
         } else {
 
         }
@@ -381,15 +478,15 @@ void consoleDisplayTask(void *consoleDisplayData) {
 void warningAlarmTask(void *warningAlarmData) {
     WarningAlarmData *data = (WarningAlarmData *) warningAlarmData;
     //printf("warningAlarmTask\n");
-    static Color fuelStatus = NONE;
-    static Color batteryStatus = NONE;
+    static int fuelStatus = NONE;
+    static int batteryStatus = NONE;
     static unsigned long hideFuelTime = 0;
     static unsigned long showFuelTime = 0;
     static unsigned long hideBatteryTime = 0;
     static unsigned long showBatteryTime = 0;
 
     int fuelDelay = (*data->fuelLevel <= 10) ? 2000 : 1000;
-    Color fuelColor = (*data->fuelLevel <= 10) ? RED : ORANGE;
+    int fuelColor = (*data->fuelLevel <= 10) ? RED : ORANGE;
 
     if (*data->fuelLevel <= 50) {
         if (fuelStatus == fuelColor) {
@@ -398,28 +495,28 @@ void warningAlarmTask(void *warningAlarmData) {
                     showFuelTime = systemTime() + fuelDelay;
                     hideFuelTime = 0;
                     //TODO hide fuel status with color fuelColor
-                    print("FUEL", NONE, 0);
+                    print("FUEL",4, NONE, 0);
                 }
             } else { //If hiding fuel status
                 if (showFuelTime < systemTime()) {
                     hideFuelTime = systemTime() + fuelDelay;
                     showFuelTime = 0;
                     //TODO show fuel status with fuelColor
-                    print("FUEL", fuelColor, 0);
+                    print("FUEL",4, fuelColor, 0);
                 }
             }
         } else {
             fuelStatus = fuelColor;
-            print("FUEL", fuelColor, 0);
+            print("FUEL", 4, fuelColor, 0);
             hideFuelTime = systemTime() + fuelDelay;
         }
     } else if (fuelStatus != GREEN) {
-        print("FUEL", GREEN, 0);
+        print("FUEL", 4, GREEN, 0);
         fuelStatus = GREEN;
     }
 
     int batteryDelay = (*data->batteryLevel <= 10) ? 1000 : 2000;
-    Color batteryColor = (*data->batteryLevel <= 10) ? RED : ORANGE;
+    int batteryColor = (*data->batteryLevel <= 10) ? RED : ORANGE;
     if (*data->batteryLevel <= 50) {
         if (batteryStatus == batteryColor) {
             if (showBatteryTime == 0) { //If showing battery status
@@ -427,23 +524,23 @@ void warningAlarmTask(void *warningAlarmData) {
                     showBatteryTime = systemTime() + batteryDelay;
                     hideBatteryTime = 0;
                     //TODO hide battery status with color batteryColor
-                    print("BATTERY", NONE, 1);
+                    print("BATTERY", 7, NONE, 1);
                 }
             } else { //If hiding battery status
                 if (showBatteryTime < systemTime()) {
                     hideBatteryTime = systemTime() + batteryDelay;
                     showBatteryTime = 0;
                     //TODO show battery status
-                    print("BATTERY", batteryColor, 1);
+                    print("BATTERY", 7, batteryColor, 1);
                 }
             }
         } else {
             batteryStatus = batteryColor;
-            print("BATTERY", batteryColor, 1);
+            print("BATTERY", 7, batteryColor, 1);
             hideBatteryTime = systemTime() + batteryDelay;
         }
     } else if (batteryStatus != GREEN) {
-        print("BATTERY", GREEN, 1);
+        print("BATTERY", 7, GREEN, 1);
         batteryStatus = GREEN;
     }
 }
@@ -460,8 +557,8 @@ int randomInteger(int low, int high) {
     if (low > high)
         retVal = randomInteger(high, low);
     else {
-        randomSeed = randomSeed * multiplier + addOn;
-        randNum = randomSeed;
+        randomGenerationSeed = randomGenerationSeed * multiplier + addOn;
+        randNum = randomGenerationSeed;
 
         if (randNum < 0) {
             randNum = randNum + max;
@@ -475,29 +572,15 @@ int randomInteger(int low, int high) {
     return retVal;
 }
 
-void print(char str[], Color color, int line) {
-    switch (color) {
-        case GREEN:
-            printf("\t%s GREEN %d\n", str, line);
-            break;
-        case ORANGE:
-            printf("\t%s ORANGE %d\n", str, line);
-            break;
-        case RED:
-            printf("\t%s RED %d\n", str, line);
-            break;
-        case NONE:
-            printf("\t%s BLACK %d\n", str, line);
-            break;
-    }
+void print(char str[], int length, int color, int line) {
+  //To flash the selected line, you must print exact same string black then recolor
+  for (int i = 0; i < length; i++) {
+    tft.setTextColor(color);
+    tft.setCursor(i*12, line*16);
+    tft.print(str[i]);
+  }
 }
 
 unsigned long systemTime() {
-    return (unsigned long) time(NULL) * 1000;
-}
-
-
-int main() {
-    run();
-    return 0;
+    return millis();
 }
