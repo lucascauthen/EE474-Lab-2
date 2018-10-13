@@ -306,13 +306,14 @@ void setupSystem() {
     queue[4] = &warningAlarm;
     queue[5] = 0x0;
 
+    //Starts the schedule looping
     scheduleTask(queue);
 }
 
 //Runs the loop of all six tasks, does not run the task if the task pointer is null
 void scheduleTask(TCB *tasks[6]) {
     unsigned int currentTaskIndex = 0;
-    while (1) {
+    while (1) { //Loop forever
         //Major cycle
         while (currentTaskIndex < 6) {
             TCB *task = tasks[currentTaskIndex];
